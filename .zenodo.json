@@ -1,13 +1,14 @@
 {
   "title": "Cis-regulatory annotation of the feline renal cortex and the tissue-specificity shift in chronic kidney disease: analysis code",
-  "description": "Analysis pipeline combining replicated ChIP-seq peak sets from seven domestic cat tissues with published renal expression matrices, to annotate promoter and enhancer architecture in the feline renal cortex and to characterise the tissue breadth of regulatory elements associated with genes that change in chronic kidney disease. Includes the permutation control that detects silent assembly discordance between feline datasets.",
+  "description": "Analysis pipeline combining replicated ChIP-seq peak sets from seven domestic cat tissues with published renal expression matrices, to annotate promoter and enhancer architecture in the feline renal cortex and to characterise the tissue breadth of regulatory elements associated with genes that change in chronic kidney disease. Includes the permutation control that detects silent assembly discordance between feline datasets. Primary data are not included and are downloaded by the scripts from GEO and NCBI.",
   "upload_type": "software",
-  "license": "MIT",
   "access_right": "open",
+  "license": "mit",
+  "language": "eng",
   "creators": [
     {
       "name": "Melo, Wanderson Gabriel Gomes de",
-      "affiliation": "Rede Nordeste de Biotecnologia, Universidade Federal do Piaui, Teresina, Brazil",
+      "affiliation": "Universidade Federal do Piaui, Teresina, Brazil",
       "orcid": "0000-0002-5120-2281"
     }
   ],
@@ -17,27 +18,6 @@
     "cis-regulatory elements",
     "ChIP-seq",
     "tissue specificity",
-    "cell composition",
-    "renal cortex",
-    "reproducible research"
-  ],
-  "related_identifiers": [
-    {
-      "identifier": "10.1038/s42003-025-09164-8",
-      "relation": "isDerivedFrom",
-      "resource_type": "publication-article",
-      "scheme": "doi"
-    },
-    {
-      "identifier": "GSE303653",
-      "relation": "isDerivedFrom",
-      "scheme": "other"
-    },
-    {
-      "identifier": "GSE182952",
-      "relation": "isDerivedFrom",
-      "scheme": "other"
-    }
-  ],
-  "language": "eng"
+    "renal cortex"
+  ]
 }
