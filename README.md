@@ -1,6 +1,6 @@
 # Cis-regulatory annotation of the feline renal cortex
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21710846.svg)](https://doi.org/10.5281/zenodo.21710846)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21710845.svg)](https://doi.org/10.5281/zenodo.21710845)
 
 Analysis code for the manuscript *A cis-regulatory annotation of the feline renal cortex and the tissue-specificity shift in chronic kidney disease*.
 
@@ -77,7 +77,7 @@ Three layers, licensed separately.
 ```
 Melo WGG. Cis-regulatory annotation of the feline renal cortex and the
 tissue-specificity shift in chronic kidney disease: analysis code.
-Zenodo. doi:10.5281/zenodo.21710846
+Zenodo. doi:10.5281/zenodo.21710845
 ```
 
 [manuscript citation, to be added on acceptance]
