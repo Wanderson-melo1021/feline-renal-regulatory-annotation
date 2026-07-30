@@ -1,5 +1,7 @@
 # Cis-regulatory annotation of the feline renal cortex
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21710846.svg)](https://doi.org/10.5281/zenodo.21710846)
+
 Analysis code for the manuscript *A cis-regulatory annotation of the feline renal cortex and the tissue-specificity shift in chronic kidney disease*.
 
 The study annotates promoter and enhancer architecture for genes expressed in the renal cortex of the domestic cat, combining replicated ChIP-seq peak sets with the RefSeq annotation, and asks whether the transcriptomic signature of chronic kidney disease has recoverable coregulatory structure. It does not: the only reproducible axis tracks tubular content. Genes that lose expression are instead enriched for enhancers active in the kidney and nowhere else, and genes that gain expression for enhancers shared across organs.
@@ -40,9 +42,19 @@ Run in order. Each module writes to its own directory under `results/` and reads
 
 Module 03 is parameterised by compartment and contrast in its first two lines.
 
-## Requirements
+## Environment
 
-R with limma, dynamicTreeCut, rtracklayer, GenomicRanges, Rsamtools, Biostrings, monaLisa, TFBSTools, JASPAR2020, gprofiler2, org.Hs.eg.db, readxl, ggplot2 and patchwork.
+R 4.6.0 with:
+
+| Package | Version | Package | Version |
+|---|---|---|---|
+| GenomicRanges | 1.64.0 | monaLisa | 1.18.0 |
+| rtracklayer | 1.72.0 | TFBSTools | 1.50.0 |
+| Rsamtools | 2.28.0 | JASPAR2020 | 0.99.10 |
+| Biostrings | 2.80.0 | gprofiler2 | 0.2.4 |
+| limma | 3.68.3 | org.Hs.eg.db | 3.23.1 |
+| dynamicTreeCut | 1.63-1 | readxl | 1.5.0 |
+| ggplot2 | 4.0.3 | patchwork | 1.3.2 |
 
 Motif enrichment is the only computationally heavy step. Set the `MOTIF_WORKERS` environment variable to control parallelism; on a machine with limited memory, use `MOTIF_WORKERS=1`. That module writes each result as it completes and skips combinations already present, so an interrupted run can be resumed.
 
@@ -62,13 +74,12 @@ Three layers, licensed separately.
 
 ## Citation
 
-If you use this code or the derived tables, please cite the manuscript and this repository:
-
 ```
-[manuscript citation, to be completed on acceptance]
-
-[author list]. Cis-regulatory annotation of the feline renal cortex.
-Zenodo. doi:[concept DOI]
+Melo WGG. Cis-regulatory annotation of the feline renal cortex and the
+tissue-specificity shift in chronic kidney disease: analysis code.
+Zenodo. doi:10.5281/zenodo.21710846
 ```
 
-The Zenodo concept DOI resolves to the most recent version and should be preferred over a version-specific DOI.
+[manuscript citation, to be added on acceptance]
+
+The DOI above is the concept identifier and resolves to the most recent version.
