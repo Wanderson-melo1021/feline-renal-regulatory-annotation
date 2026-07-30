@@ -1,0 +1,16 @@
+Supplementary Table S1. Coexpression module stability under subsampling.
+
+direction	module	n genes	mean jaccard	sd jaccard	retained
+up	 7	 68	0.187	0.085	FALSE
+up	10	 34	0.200	0.133	FALSE
+up	 5	 90	0.229	0.066	FALSE
+up	 4	 90	0.238	0.071	FALSE
+up	 9	 43	0.279	0.100	FALSE
+up	 3	117	0.334	0.097	FALSE
+up	 6	 70	0.374	0.077	FALSE
+up	 2	257	0.388	0.075	FALSE
+down	 2	103	0.390	0.105	FALSE
+up	 8	 55	0.465	0.094	FALSE
+up	 1	397	0.565	0.113	FALSE
+down	 3	 78	0.631	0.121	TRUE
+down	 1	396	0.731	0.116	TRUE

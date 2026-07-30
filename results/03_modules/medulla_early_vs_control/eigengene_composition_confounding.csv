@@ -1,0 +1,7 @@
+"module","marker_set","rho","p_value","fdr"
+"up_M1","epithelial",-0.346,0.16,0.192
+"up_M1","immune",0.831,9.54e-06,5.72e-05
+"up_M1","fibroblast",0.583,0.0126,0.0252
+"down_M1","epithelial",0.224,0.37,0.37
+"down_M1","immune",-0.657,0.00384,0.0115
+"down_M1","fibroblast",-0.381,0.12,0.18

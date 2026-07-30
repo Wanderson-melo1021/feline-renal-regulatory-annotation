@@ -1,0 +1,4 @@
+"marker_set","spearman_rho","spearman_p","age_p_given_group"
+"tubular",0.039,0.867,0.294
+"immune",-0.187,0.416,0.558
+"fibroblast",-0.077,0.741,0.986

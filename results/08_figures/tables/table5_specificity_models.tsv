@@ -1,0 +1,9 @@
+Table 5. Association between enhancer tissue specificity and expression state.
+
+outcome	term	Estimate	odds ratio	ci low	ci high	p value
+repressed	(Intercept)	-1.898	0.150	0.126	0.179	3.46e-99
+repressed	frac_kidney_specific	 0.821	2.272	1.863	2.771	5.21e-16
+repressed	log(n_enhancers + 1)	 0.293	1.341	1.177	1.527	1.03e-05
+induced	(Intercept)	-1.243	0.289	0.246	0.339	6.32e-52
+induced	frac_kidney_specific	-1.114	0.328	0.249	0.433	3.10e-15
+induced	log(n_enhancers + 1)	 0.194	1.214	1.067	1.383	3.00e-03

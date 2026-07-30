@@ -1,0 +1,4 @@
+"mark","observed_genes_hit","observed_fraction","expected_genes_hit","fold_enrichment"
+"h3k4me3",17419,0.4916,2027.8,8.59
+"h3k27ac",17256,0.487,4403.8,3.92
+"ctcf",14358,0.4052,2822.8,5.09

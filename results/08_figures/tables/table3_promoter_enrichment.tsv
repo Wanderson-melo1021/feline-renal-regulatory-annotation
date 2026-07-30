@@ -1,0 +1,6 @@
+Table 3. Permutation validation of promoter mark enrichment.
+
+mark	observed genes hit	observed fraction	expected genes hit	fold enrichment	mark label
+h3k4me3	17419	0.492	2027.8	8.59	H3K4me3
+h3k27ac	17256	0.487	4403.8	3.92	H3K27ac
+ctcf	14358	0.405	2822.8	5.09	CTCF

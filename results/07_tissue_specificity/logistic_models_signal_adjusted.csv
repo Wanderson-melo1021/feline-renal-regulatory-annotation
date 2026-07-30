@@ -1,0 +1,9 @@
+"outcome","term","Estimate","odds_ratio","Std. Error","Pr(>|z|)"
+"repressed_signal_adjusted","(Intercept)",-1.87452075701877,0.153,0.117198893629979,1.39898817990205e-57
+"repressed_signal_adjusted","frac_kidney_specific",0.812898058332607,2.254,0.104430726091267,7.0217358805353e-15
+"repressed_signal_adjusted","log(n_enhancers + 1)",0.289818168684145,1.336,0.0672860575419272,1.65293451328916e-05
+"repressed_signal_adjusted","mean_fold_change",-0.00314155409624578,0.997,0.010297402218044,0.760303549686197
+"induced_signal_adjusted","(Intercept)",-0.890906054414796,0.41,0.106760301324649,7.12627814661423e-17
+"induced_signal_adjusted","frac_kidney_specific",-1.21837690415293,0.296,0.142020038313564,9.57776816079994e-18
+"induced_signal_adjusted","log(n_enhancers + 1)",0.138709382711543,1.149,0.0671206648135915,0.0387749283595388
+"induced_signal_adjusted","mean_fold_change",-0.0496893296069729,0.952,0.0102336015289543,1.2007877178618e-06

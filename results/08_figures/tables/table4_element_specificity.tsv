@@ -1,0 +1,11 @@
+Table 4. Tissue breadth of renal cortical regulatory elements.
+
+class	n	pct	mark
+Kidney-specific	16211	19.97	H3K27ac
+Restricted (2-3)	26022	32.05	H3K27ac
+Shared (4-5)	17193	21.18	H3K27ac
+Ubiquitous (6-7)	21756	26.80	H3K27ac
+Kidney-specific	 3159	10.63	H3K4me3
+Restricted (2-3)	 4279	14.40	H3K4me3
+Shared (4-5)	 3147	10.59	H3K4me3
+Ubiquitous (6-7)	19133	64.38	H3K4me3

@@ -1,0 +1,7 @@
+"compartment","contrast","n_fdr_010","n_fdr_005","n_fdr_005_lfc1"
+"cortex","early_vs_control",3,0,0
+"cortex","late_vs_control",5087,3415,1995
+"cortex","late_vs_early",0,0,0
+"medulla","early_vs_control",1908,206,152
+"medulla","late_vs_control",2821,1307,835
+"medulla","late_vs_early",8,6,5

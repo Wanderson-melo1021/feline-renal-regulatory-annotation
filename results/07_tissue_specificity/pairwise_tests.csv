@@ -1,0 +1,3 @@
+"comparison","median_tissues","median_tissues_unchanged","p_tissues","median_specific","median_specific_unchanged","p_specific"
+"repressed vs unchanged",2.818,3.8,0,0,0,9.14e-21
+"induced vs unchanged",4.333,3.8,4.71e-13,0,0,3.51e-14

@@ -1,0 +1,22 @@
+"tissue","mark","n peaks"
+"heart","H3K4me3",41120
+"heart","H3K27ac",75531
+"heart","CTCF",70079
+"kidney","H3K4me3",29879
+"kidney","H3K27ac",81603
+"kidney","CTCF",60606
+"liver","H3K4me3",28581
+"liver","H3K27ac",55244
+"liver","CTCF",60122
+"lung","H3K4me3",27683
+"lung","H3K27ac",67315
+"lung","CTCF",56120
+"smallintestine","H3K4me3",27505
+"smallintestine","H3K27ac",35524
+"smallintestine","CTCF",55014
+"testis","H3K4me3",50734
+"testis","H3K27ac",81189
+"testis","CTCF",44457
+"thyroid","H3K4me3",28945
+"thyroid","H3K27ac",74326
+"thyroid","CTCF",57713

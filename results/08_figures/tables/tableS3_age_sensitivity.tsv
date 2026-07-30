@@ -1,0 +1,5 @@
+Supplementary Table S3. Concordance between differential expression models with and without age.
+
+compartment	contrast	n base	n age adjusted	n shared	jaccard	logfc spearman
+cortex	CKD34 - Control	5087	5117	4950	0.942	0.999
+medulla	CKD12 - Control	1908	3578	1908	0.533	0.998
