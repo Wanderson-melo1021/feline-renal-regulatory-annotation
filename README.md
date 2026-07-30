@@ -6,7 +6,7 @@ Analysis code for the manuscript *A cis-regulatory annotation of the feline rena
 
 The study annotates promoter and enhancer architecture for genes expressed in the renal cortex of the domestic cat, combining replicated ChIP-seq peak sets with the RefSeq annotation, and asks whether the transcriptomic signature of chronic kidney disease has recoverable coregulatory structure. It does not: the only reproducible axis tracks tubular content. Genes that lose expression are instead enriched for enhancers active in the kidney and nowhere else, and genes that gain expression for enhancers shared across organs.
 
-This repository contains code and derived result tables. Primary data are publicly deposited and are downloaded by the scripts; they are not versioned here.
+This repository contains code and derived result tables. Primary data are publicly deposited and are not versioned here.
 
 ## Data sources
 
@@ -16,7 +16,17 @@ This repository contains code and derived result tables. Primary data are public
 | Chromatin peak sets | GEO GSE182952, BioProject PRJNA758414 | seven tissues; deposited without an associated publication |
 | Genome annotation and sequence | NCBI RefSeq GCF_018350175.1, F.catus_Fca126_mat1.0 | Annotation Release 105 |
 
-Download the expression supplement manually into `data/raw/expression/`. Everything else is fetched by the scripts in step 0.
+## Setting up
+
+The `data/` directory is not versioned. Create it before running anything:
+
+```
+mkdir -p data/raw/expression data/raw/annotation data/raw/chip_peaks data/processed
+```
+
+One file must be downloaded by hand, because it is distributed as journal supplementary material rather than through a public API: the Supplementary Data workbook of Li et al., file `42003_2025_9164_MOESM3_ESM.xlsx`, available from https://www.nature.com/articles/s42003-025-09164-8. Place it in `data/raw/expression/` under that exact filename, which is what module 01 expects. Sheets `S3 RNA cortex` and `S4 RNA medulla` carry the expression matrices and the sample metadata.
+
+Peak sets, genome annotation and genomic sequence are fetched by the scripts in step 0 and do not need to be retrieved manually. The genomic FASTA must be decompressed before module 04, which indexes it on first use.
 
 ## Assembly caveat
 
@@ -62,6 +72,8 @@ Motif enrichment is the only computationally heavy step. Set the `MOTIF_WORKERS`
 
 This was an exploratory analysis without a prespecified plan. Decisions made in response to intermediate results are enumerated in the manuscript Methods. Superseded script versions from development are not included; the commit history is the record of the analytical path.
 
+Result tables under `results/` correspond to the code as committed. Anyone re-running the pipeline should obtain the same values.
+
 ## Licensing
 
 Three layers, licensed separately.
@@ -71,6 +83,10 @@ Three layers, licensed separately.
 **Derived result tables** — the contents of `results/`, under Creative Commons Attribution 4.0 International. See `results/LICENSE`.
 
 **Primary data** — not covered by either licence and not redistributed here. The expression matrices originate from an open-access article under the terms set by its publisher; the chromatin peak sets and the genome annotation originate from NCBI. Anyone reusing those data should attribute them to their original sources and observe the terms attached there.
+
+## Artificial intelligence assistance
+
+See `ai_use_statement.md`.
 
 ## Citation
 
@@ -82,4 +98,4 @@ Zenodo. doi:10.5281/zenodo.21710845
 
 [manuscript citation, to be added on acceptance]
 
-The DOI above is the concept identifier and resolves to the most recent version.
+The DOI above is the concept identifier and always resolves to the most recent version.
