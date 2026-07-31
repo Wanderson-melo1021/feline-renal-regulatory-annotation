@@ -1,3 +1,3 @@
 "stratum","n","n_err_site","pct_mito_err_pos","pct_mito_err_neg","odds_ratio","ci_low","ci_high","p_value"
-"repressed",1705,136,41.18,23.01,2.341,1.6,3.408,9.38e-06
-"not_repressed",9254,473,15.22,9.24,1.764,1.339,2.298,5.23e-05
+"repressed",1727,133,41.35,22.96,2.364,1.61,3.454,7.52e-06
+"not_repressed",9232,476,15.34,9.21,1.787,1.358,2.324,3.74e-05

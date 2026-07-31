@@ -1,5 +1,5 @@
-Supplementary Table S3. Concordance between differential expression models with and without age.
+Supplementary Table S3. Concordance between the primary differential expression model, which includes age, and a sensitivity model without it.
 
-compartment	contrast	n base	n age adjusted	n shared	jaccard	logfc spearman
-cortex	CKD34 - Control	5087	5117	4950	0.942	0.999
-medulla	CKD12 - Control	1908	3578	1908	0.533	0.998
+compartment	contrast	n primary with age	n sensitivity without age	n shared	jaccard	logfc spearman
+cortex	CKD34 - Control	5117	5087	4950	0.942	0.999
+medulla	CKD12 - Control	3578	1908	1908	0.533	0.998

@@ -1,9 +1,9 @@
 Table 2. Differentially expressed genes by compartment and contrast.
 
 compartment	contrast	n fdr 010	n fdr 005	n fdr 005 lfc1
-Cortex	CKD 1/2 vs control	   3	   0	   0
-Cortex	CKD 3/4 vs control	5087	3415	1995
-Cortex	CKD 3/4 vs CKD 1/2	   0	   0	   0
-Medulla	CKD 1/2 vs control	1908	 206	 152
-Medulla	CKD 3/4 vs control	2821	1307	 835
-Medulla	CKD 3/4 vs CKD 1/2	   8	   6	   5
+Cortex	CKD 1/2 vs control	   0	   0	   0
+Cortex	CKD 3/4 vs control	5117	3286	1904
+Cortex	CKD 3/4 vs CKD 1/2	   1	   1	   1
+Medulla	CKD 1/2 vs control	3578	2112	1366
+Medulla	CKD 3/4 vs control	2885	1473	 908
+Medulla	CKD 3/4 vs CKD 1/2	 568	  18	  16

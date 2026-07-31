@@ -1,0 +1,7 @@
+"direction","n_genes","var_explained","marker_set","rho","p_value","fdr"
+"up",1654,0.557,"epithelial",-0.422,0.0824,0.124
+"up",1654,0.557,"immune",0.841,0,0
+"up",1654,0.557,"fibroblast",0.61,0.00845,0.0169
+"down",1717,0.646,"epithelial",0.187,0.456,0.456
+"down",1717,0.646,"immune",-0.616,0.00767,0.0169
+"down",1717,0.646,"fibroblast",-0.333,0.176,0.211

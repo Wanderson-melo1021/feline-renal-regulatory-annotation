@@ -3,7 +3,7 @@ library(limma)
 
 XLSX_PATH <- "data/raw/expression/42003_2025_9164_MOESM3_ESM.xlsx"
 EXPR_OBJ <- "data/processed/expression_objects.rds"
-CHAR_DIR <- "results/03b_module_characterization"
+CHAR_DIR <- "results/03_modules/cortex_late_vs_control"
 OUT_DIR <- "results/09_cohort_and_age"
 
 dir.create(OUT_DIR, recursive = TRUE, showWarnings = FALSE)
@@ -106,12 +106,13 @@ concordance <- do.call(rbind, lapply(names(SHEETS), function(cp) {
   s$group <- factor(make.names(sub("/", "", as.character(s$group))))
   stopifnot(!any(is.na(s$age)))
 
-  base <- fit_contrast(expr, s, ~ 0 + group + sex, CONTRASTS[[cp]])
-  adj <- fit_contrast(expr, s, ~ 0 + group + sex + age, CONTRASTS[[cp]])
-  merged <- merge(base, adj, by = "gene_symbol", suffixes = c("_base", "_age"))
+  without_age <- fit_contrast(expr, s, ~ 0 + group + sex, CONTRASTS[[cp]])
+  with_age <- fit_contrast(expr, s, ~ 0 + group + sex + age, CONTRASTS[[cp]])
+  merged <- merge(with_age, without_age, by = "gene_symbol",
+                  suffixes = c("_with_age", "_without_age"))
 
-  sig_base <- merged$fdr_base < FDR_CUTOFF
-  sig_age <- merged$fdr_age < FDR_CUTOFF
+  sig_age <- merged$fdr_with_age < FDR_CUTOFF
+  sig_base <- merged$fdr_without_age < FDR_CUTOFF
 
   write.csv(merged, file.path(OUT_DIR,
             sprintf("age_sensitivity_genes_%s.csv", cp)), row.names = FALSE)
@@ -119,18 +120,19 @@ concordance <- do.call(rbind, lapply(names(SHEETS), function(cp) {
   data.frame(
     compartment = cp,
     contrast = CONTRASTS[[cp]],
-    n_base = sum(sig_base),
-    n_age_adjusted = sum(sig_age),
+    n_primary_with_age = sum(sig_age),
+    n_sensitivity_without_age = sum(sig_base),
     n_shared = sum(sig_base & sig_age),
     jaccard = round(sum(sig_base & sig_age) / sum(sig_base | sig_age), 3),
-    logfc_spearman = round(cor(merged$log_fc_base, merged$log_fc_age,
+    logfc_spearman = round(cor(merged$log_fc_with_age,
+                               merged$log_fc_without_age,
                                method = "spearman"), 4),
     stringsAsFactors = FALSE)
 }))
 
 write.csv(concordance, file.path(OUT_DIR, "age_sensitivity_concordance.csv"),
           row.names = FALSE)
-cat("\nconcordance between models with and without age\n")
+cat("\nconcordance between the primary model (with age) and the sensitivity model (without age)\n")
 print(concordance)
 
 composition <- read.csv(file.path(CHAR_DIR, "composition_and_eigengenes.csv"),
@@ -141,7 +143,11 @@ composition$group <- droplevels(meta$cortex$group[idx])
 stopifnot(!any(is.na(composition$age)), !any(is.na(composition$group)),
           nlevels(composition$group) >= 2)
 
-age_composition <- do.call(rbind, lapply(c("tubular", "immune", "fibroblast"),
+MARKER_COLUMNS <- intersect(c("epithelial", "tubular", "immune", "fibroblast"),
+                            colnames(composition))
+stopifnot(length(MARKER_COLUMNS) > 0)
+
+age_composition <- do.call(rbind, lapply(MARKER_COLUMNS,
                                          function(cell) {
   ct <- suppressWarnings(cor.test(composition$age, composition[[cell]],
                                   method = "spearman"))

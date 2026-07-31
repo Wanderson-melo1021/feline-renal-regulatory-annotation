@@ -8,8 +8,12 @@ TAB_DIR <- file.path(OUT_DIR, "tables")
 REG_DIR <- "results/02_regulatory_annotation"
 DE_DIR <- "results/01_differential_expression"
 CHAR_DIR <- "results/03b_module_characterization"
-MOD_DIR <- "results/03_coexpression_modules"
+MOD_ROOT <- "results/03_modules"
+MOD_CORTEX <- file.path(MOD_ROOT, "cortex_late_vs_control")
+MOD_MEDULLA <- file.path(MOD_ROOT, "medulla_early_vs_control")
 SPEC_DIR <- "results/07_tissue_specificity"
+AGE_DIR <- "results/09_cohort_and_age"
+MOTIF_DIR <- "results/04_motif_enrichment"
 PEAK_DIR <- "data/raw/chip_peaks"
 
 MARK_LABELS <- c(h3k4me3 = "H3K4me3", h3k27ac = "H3K27ac", ctcf = "CTCF")
@@ -36,6 +40,32 @@ theme_set(theme_manuscript())
 read_if_exists <- function(path) {
   if (file.exists(path)) read.csv(path, stringsAsFactors = FALSE) else NULL
 }
+
+clean_names <- function(df) {
+  colnames(df) <- gsub("_", " ", colnames(df))
+  colnames(df) <- gsub("\\.+", " ", colnames(df))
+  colnames(df) <- trimws(colnames(df))
+  df
+}
+
+round_numeric <- function(df, digits = 3) {
+  num <- vapply(df, is.numeric, logical(1))
+  df[num] <- lapply(df[num], function(v) {
+    ifelse(abs(v) < 1e-3 & v != 0, signif(v, 3), round(v, digits))
+  })
+  df
+}
+
+format_table <- function(df, name, caption) {
+  if (is.null(df)) return(invisible(NULL))
+  df <- clean_names(round_numeric(df))
+  write.csv(df, file.path(TAB_DIR, sprintf("%s.csv", name)), row.names = FALSE)
+  writeLines(c(caption, "", paste(colnames(df), collapse = "\t"),
+               apply(df, 1, paste, collapse = "\t")),
+             file.path(TAB_DIR, sprintf("%s.tsv", name)))
+  message("saved table ", name)
+}
+
 
 save_figure <- function(plot, name, height_mm) {
   for (ext in c("pdf", "png")) {
@@ -143,47 +173,162 @@ if (!is.null(de_summary)) {
   save_figure(fig2, "figure2_differential_expression", 80)
 }
 
-stability <- read_if_exists(file.path(MOD_DIR, "module_stability.csv"))
-composition <- read_if_exists(file.path(CHAR_DIR,
-                                        "composition_and_eigengenes.csv"))
-
-if (!is.null(stability)) {
-  stability$label <- sprintf("%s M%s", stability$direction, stability$module)
-  stability <- stability[order(stability$mean_jaccard), ]
-  stability$label <- factor(stability$label, levels = stability$label)
-
-  p3a <- ggplot(stability, aes(label, mean_jaccard,
-                               fill = mean_jaccard >= 0.6)) +
-    geom_col(width = 0.7) +
-    geom_errorbar(aes(ymin = pmax(mean_jaccard - sd_jaccard, 0),
-                      ymax = pmin(mean_jaccard + sd_jaccard, 1)),
-                  width = 0.25, linewidth = 0.3) +
-    geom_hline(yintercept = 0.6, linetype = "dashed", linewidth = 0.3) +
-    scale_fill_manual(values = c("FALSE" = "grey70", "TRUE" = "#2c6fbb"),
-                      guide = "none") +
-    coord_flip() +
-    labs(x = NULL, y = "Mean Jaccard index under subsampling")
+load_compartment <- function(dir, label) {
+  st <- read_if_exists(file.path(dir, "module_stability.csv"))
+  if (!is.null(st)) st$compartment <- label
+  cm <- read_if_exists(file.path(dir, "composition_and_eigengenes.csv"))
+  if (!is.null(cm)) cm$compartment <- label
+  pc <- read_if_exists(file.path(dir, "direction_pc1_composition.csv"))
+  if (!is.null(pc)) pc$compartment <- label
+  list(stability = st, composition = cm, pc1 = pc)
 }
 
-if (!is.null(composition) && "down_M1" %in% colnames(composition)) {
-  rho <- cor(composition$down_M1, composition$tubular, method = "spearman")
-  composition$group <- factor(unname(GROUP_LABELS[composition$group]),
-                              levels = unname(GROUP_LABELS))
-  p3b <- ggplot(composition, aes(tubular, down_M1, colour = group)) +
-    scale_colour_manual(values = c("Control" = "#4a7fb5",
-                                   "CKD 1/2" = "#e0a458",
-                                   "CKD 3/4" = "#b5453a")) +
-    geom_point(size = 1.6) +
-    geom_smooth(method = "lm", se = FALSE, colour = "grey40",
-                linewidth = 0.4, inherit.aes = FALSE,
-                aes(tubular, down_M1)) +
-    annotate("text", x = -Inf, y = Inf, hjust = -0.1, vjust = 1.4, size = 2.8,
-             label = sprintf("rho == %.2f", rho), parse = TRUE) +
-    labs(x = "Proximal tubule marker score",
-         y = "Module eigengene (down_M1)", colour = NULL)
+cortex_mod <- load_compartment(MOD_CORTEX, "Cortex")
+medulla_mod <- load_compartment(MOD_MEDULLA, "Medulla")
 
-  fig3 <- (p3a | p3b) + plot_annotation(tag_levels = "A")
-  save_figure(fig3, "figure3_composition_dominance", 85)
+stability <- rbind(cortex_mod$stability, medulla_mod$stability)
+pc1_all <- rbind(cortex_mod$pc1, medulla_mod$pc1)
+
+if (!is.null(stability)) {
+  stability$compartment <- factor(stability$compartment,
+                                  levels = c("Cortex", "Medulla"))
+  stability$direction <- factor(stability$direction,
+                                levels = c("down", "up"),
+                                labels = c("Repressed", "Induced"))
+  stability <- stability[order(stability$compartment, stability$mean_jaccard), ]
+  stability$rank <- ave(stability$mean_jaccard, stability$compartment,
+                        FUN = seq_along)
+
+  p3a <- ggplot(stability, aes(rank, mean_jaccard, colour = direction)) +
+    geom_hline(yintercept = 0.6, linetype = "dashed", linewidth = 0.3) +
+    geom_linerange(aes(ymin = pmax(mean_jaccard - sd_jaccard, 0),
+                       ymax = pmin(mean_jaccard + sd_jaccard, 1)),
+                   linewidth = 0.3, alpha = 0.6) +
+    geom_point(size = 1.3) +
+    facet_wrap(~ compartment, scales = "free_x") +
+    scale_colour_manual(values = c(Repressed = "#2c6fbb", Induced = "#c0392b")) +
+    scale_y_continuous(limits = c(0, 1)) +
+    labs(x = "Candidate modules, ordered by stability",
+         y = "Mean Jaccard index under subsampling", colour = NULL)
+}
+
+if (!is.null(cortex_mod$composition) && "down_PC1" %in% colnames(cortex_mod$composition)) {
+  cx <- cortex_mod$composition
+  cx$group <- factor(unname(GROUP_LABELS[cx$group]), levels = unname(GROUP_LABELS))
+  rho_cx <- cor(cx$down_PC1, cx$epithelial, method = "spearman")
+
+  p3b <- ggplot(cx, aes(epithelial, down_PC1, colour = group)) +
+    geom_smooth(method = "lm", se = FALSE, colour = "grey40", linewidth = 0.4,
+                inherit.aes = FALSE, aes(epithelial, down_PC1)) +
+    geom_point(size = 1.6) +
+    scale_colour_manual(values = c("Control" = "#4a7fb5", "CKD 1/2" = "#e0a458",
+                                   "CKD 3/4" = "#b5453a")) +
+    annotate("text", x = -Inf, y = Inf, hjust = -0.1, vjust = 1.4, size = 2.8,
+             label = sprintf("rho == %.2f", rho_cx), parse = TRUE) +
+    labs(x = "Proximal tubule marker score",
+         y = "First component, repressed genes", colour = NULL)
+}
+
+if (!is.null(pc1_all)) {
+  pc1_all$compartment <- factor(pc1_all$compartment,
+                                levels = c("Cortex", "Medulla"))
+  pc1_all$direction <- factor(pc1_all$direction, levels = c("down", "up"),
+                              labels = c("Repressed", "Induced"))
+  pc1_all$marker_set <- factor(pc1_all$marker_set,
+                               levels = c("epithelial", "immune", "fibroblast"),
+                               labels = c("Epithelial", "Immune", "Fibroblast"))
+
+  p3c <- ggplot(pc1_all, aes(marker_set, direction, fill = rho)) +
+    geom_tile(colour = "white", linewidth = 0.6) +
+    geom_text(aes(label = sprintf("%.2f", rho)), size = 2.6) +
+    facet_wrap(~ compartment) +
+    scale_fill_gradient2(low = "#c0392b", mid = "white", high = "#2c6fbb",
+                         midpoint = 0, limits = c(-1, 1)) +
+    labs(x = NULL, y = NULL, fill = "Spearman rho")
+}
+
+if (exists("p3a") && exists("p3b") && exists("p3c")) {
+  fig3 <- (p3a | p3b) / p3c + plot_layout(heights = c(1.4, 1)) +
+    plot_annotation(tag_levels = "A")
+  save_figure(fig3, "figure3_composition_dominance", 150)
+}
+
+motifs <- read_if_exists(file.path(MOTIF_DIR, "motifs_all.csv"))
+
+if (!is.null(motifs)) {
+  motifs$region_type <- factor(motifs$region_type,
+                               levels = c("promoter", "enhancer"),
+                               labels = c("Promoters", "Enhancers"))
+  motifs$compartment <- ifelse(grepl("^cortex", motifs$set), "Cortex", "Medulla")
+  motifs$direction_label <- factor(motifs$direction, levels = c("down", "up"),
+                                   labels = c("Repressed", "Induced"))
+  motifs$significant <- !is.na(motifs$padj) & motifs$padj < 0.05
+  motifs$coherent <- with(motifs,
+    (direction == "up" & tf_log_fc > 0) | (direction == "down" & tf_log_fc < 0))
+
+  n_missing <- sum(is.na(motifs$log2_enrichment) | is.na(motifs$neg_log10_padj))
+  if (n_missing) {
+    message(sprintf("motif panel: %d of %d tests dropped for missing values",
+                    n_missing, nrow(motifs)))
+  }
+  motifs_plot <- motifs[!is.na(motifs$log2_enrichment) &
+                          !is.na(motifs$neg_log10_padj), ]
+
+  p4a <- ggplot(motifs_plot, aes(log2_enrichment, neg_log10_padj,
+                                 colour = significant)) +
+    geom_hline(yintercept = -log10(0.05), linetype = "dashed",
+               linewidth = 0.3) +
+    geom_point(size = 0.5, alpha = 0.5) +
+    facet_wrap(~ region_type) +
+    scale_colour_manual(values = c("FALSE" = "grey70", "TRUE" = "#c0392b"),
+                        guide = "none") +
+    labs(x = expression(log[2]~motif~enrichment),
+         y = expression(-log[10]~adjusted~P))
+
+  hits <- motifs[motifs$significant & !is.na(motifs$tf_fdr) &
+                   motifs$tf_fdr < 0.10 & !is.na(motifs$coherent) &
+                   motifs$coherent, ]
+
+  if (nrow(hits)) {
+    hits <- hits[!duplicated(paste(hits$compartment, hits$motif_name)), ]
+    hits$label <- sprintf("%s (%s)", hits$motif_name, hits$compartment)
+    hits <- hits[order(hits$log2_enrichment), ]
+    hits$label <- factor(hits$label, levels = hits$label)
+
+    long <- rbind(
+      data.frame(label = hits$label, compartment = hits$compartment,
+                 panel = "Motif enrichment", value = hits$log2_enrichment,
+                 stringsAsFactors = FALSE),
+      data.frame(label = hits$label, compartment = hits$compartment,
+                 panel = "Factor expression", value = hits$tf_log_fc,
+                 stringsAsFactors = FALSE))
+    long$panel <- factor(long$panel,
+                         levels = c("Motif enrichment", "Factor expression"))
+
+    p4b <- ggplot(long, aes(value, label, colour = compartment)) +
+      geom_vline(xintercept = 0, linetype = "dashed", linewidth = 0.3) +
+      geom_segment(aes(x = 0, xend = value, yend = label), linewidth = 0.4) +
+      geom_point(size = 2.2) +
+      facet_wrap(~ panel, scales = "free_x") +
+      scale_colour_manual(values = c(Cortex = "#2c6fbb", Medulla = "#d1793a")) +
+      labs(x = expression(log[2]~scale), y = NULL, colour = NULL)
+
+    fig4 <- (p4a / p4b) + plot_layout(heights = c(1, 1.1)) +
+      plot_annotation(tag_levels = "A")
+    save_figure(fig4, "figure4_motif_enrichment", 135)
+
+    write.csv(hits[, c("compartment", "direction", "region_type", "motif_name",
+                       "log2_enrichment", "padj", "tf_matched", "tf_log_fc",
+                       "tf_fdr")],
+              file.path(TAB_DIR, "table6_converging_motifs.csv"),
+              row.names = FALSE)
+  }
+
+  motif_summary <- as.data.frame(table(motifs$compartment, motifs$region_type,
+                                       motifs$significant))
+  colnames(motif_summary) <- c("compartment", "region_type", "significant", "n")
+  format_table(motif_summary, "tableS5_motif_summary",
+               "Supplementary Table S5. Number of motif tests reaching a corrected P below 0.05, by compartment and region type.")
 }
 
 element_spec <- read_if_exists(file.path(SPEC_DIR, "element_specificity.csv"))
@@ -201,7 +346,7 @@ if (!is.null(element_spec)) {
                               levels = c("H3K4ME3", "H3K27AC"),
                               labels = c("H3K4me3", "H3K27ac"))
 
-  p4a <- ggplot(element_spec, aes(mark, pct, fill = class)) +
+  p5a <- ggplot(element_spec, aes(mark, pct, fill = class)) +
     geom_col(width = 0.6) +
     scale_fill_brewer(palette = "Blues", direction = -1) +
     scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
@@ -213,7 +358,7 @@ if (!is.null(gene_spec)) {
                             levels = c("unchanged", "repressed", "induced"),
                             labels = c("Unchanged", "Repressed", "Induced"))
 
-  p4b <- ggplot(gene_spec, aes(state, mean_tissues, fill = state)) +
+  p5b <- ggplot(gene_spec, aes(state, mean_tissues, fill = state)) +
     geom_violin(scale = "width", linewidth = 0.25, colour = "grey40") +
     geom_boxplot(width = 0.14, outlier.shape = NA, linewidth = 0.3,
                  fill = "white") +
@@ -230,51 +375,45 @@ if (!is.null(models)) {
                            labels = c("Induced", "Repressed"))
   forest$or_per_0.1 <- round(exp(forest$Estimate * 0.1), 3)
 
-  p4c <- ggplot(forest, aes(odds_ratio, outcome)) +
+  p5c <- ggplot(forest, aes(odds_ratio, outcome)) +
     geom_vline(xintercept = 1, linetype = "dashed", linewidth = 0.3) +
-    geom_errorbarh(aes(xmin = ci_low, xmax = ci_high), height = 0.12,
-                   linewidth = 0.4) +
+    geom_errorbar(aes(xmin = ci_low, xmax = ci_high), orientation = "y",
+                  width = 0.12, linewidth = 0.4) +
     geom_point(size = 2.4, colour = "#2c6fbb") +
     scale_x_log10() +
     labs(x = "Odds ratio, no kidney-specific enhancers vs all kidney-specific",
          y = NULL)
 
-  fig4 <- (p4a | p4b) / p4c + plot_layout(heights = c(1.6, 1)) +
+  fig4_spec <- (p5a | p5b) / p5c + plot_layout(heights = c(1.6, 1)) +
     plot_annotation(tag_levels = "A")
-  save_figure(fig4, "figure4_tissue_specificity", 150)
+  save_figure(fig4_spec, "figure5_tissue_specificity", 150)
 }
 
-clean_names <- function(df) {
-  colnames(df) <- gsub("_", " ", colnames(df))
-  colnames(df) <- gsub("\\.+", " ", colnames(df))
-  colnames(df) <- trimws(colnames(df))
-  df
+
+cohort <- read_if_exists(file.path(AGE_DIR, "table1_cohort.csv"))
+if (!is.null(cohort)) {
+  cohort_table <- data.frame(
+    Compartment = tools::toTitleCase(cohort$compartment),
+    Group = cohort$group,
+    n = cohort$n,
+    `Age, mean (SD)` = sprintf("%.1f (%.1f)", cohort$age_mean, cohort$age_sd),
+    `Age, median [range]` = sprintf("%.1f [%.1f-%.1f]", cohort$age_median,
+                                    cohort$age_min, cohort$age_max),
+    `Sex, F/M` = sprintf("%d/%d", cohort$sex_female, cohort$sex_male),
+    `Breed, DSH/DLH` = sprintf("%d/%d", cohort$breed_dsh, cohort$breed_dlh),
+    check.names = FALSE, stringsAsFactors = FALSE)
+  format_table(cohort_table, "table1_cohort",
+               sprintf("Table 1. Cohort characteristics. Homogeneity across disease groups: age P = %s (cortex) and %s (medulla); sex P = %s and %s; breed P = %s and %s.",
+                       cohort$age_p[1], cohort$age_p[4], cohort$sex_p[1],
+                       cohort$sex_p[4], cohort$breed_p[1], cohort$breed_p[4]))
 }
 
-round_numeric <- function(df, digits = 3) {
-  num <- vapply(df, is.numeric, logical(1))
-  df[num] <- lapply(df[num], function(v) {
-    ifelse(abs(v) < 1e-3 & v != 0, signif(v, 3), round(v, digits))
-  })
-  df
-}
-
-format_table <- function(df, name, caption) {
-  if (is.null(df)) return(invisible(NULL))
-  df <- clean_names(round_numeric(df))
-  write.csv(df, file.path(TAB_DIR, sprintf("%s.csv", name)), row.names = FALSE)
-  writeLines(c(caption, "", paste(colnames(df), collapse = "\t"),
-               apply(df, 1, paste, collapse = "\t")),
-             file.path(TAB_DIR, sprintf("%s.tsv", name)))
-  message("saved table ", name)
-}
-
-format_table(de_summary, "table1_de_counts",
-             "Table 1. Differentially expressed genes by compartment and contrast.")
-format_table(enrichment, "table2_promoter_enrichment",
-             "Table 2. Permutation validation of promoter mark enrichment.")
-format_table(element_spec, "table3_element_specificity",
-             "Table 3. Tissue breadth of renal cortical regulatory elements.")
+format_table(de_summary, "table2_de_counts",
+             "Table 2. Differentially expressed genes by compartment and contrast.")
+format_table(enrichment, "table3_promoter_enrichment",
+             "Table 3. Permutation validation of promoter mark enrichment.")
+format_table(element_spec, "table4_element_specificity",
+             "Table 4. Tissue breadth of renal cortical regulatory elements.")
 if (!is.null(models)) {
   models$ci_low <- round(exp(models$Estimate - 1.96 * models$Std..Error), 3)
   models$ci_high <- round(exp(models$Estimate + 1.96 * models$Std..Error), 3)
@@ -283,15 +422,25 @@ if (!is.null(models)) {
   colnames(models)[colnames(models) == "Pr...z.."] <- "p_value"
 }
 
-format_table(models, "table4_specificity_models",
-             "Table 4. Association between enhancer tissue specificity and expression state.")
+format_table(models, "table5_specificity_models",
+             "Table 5. Association between enhancer tissue specificity and expression state.")
 if (!is.null(stability)) {
-  stability <- stability[, c("direction", "module", "n_genes", "mean_jaccard",
-                             "sd_jaccard", "retained")]
+  stability_out <- stability[, c("compartment", "direction", "module",
+                                 "n_genes", "mean_jaccard", "sd_jaccard",
+                                 "retained")]
+  stability_out <- stability_out[order(stability_out$compartment,
+                                       -stability_out$mean_jaccard), ]
+} else {
+  stability_out <- NULL
 }
 
-format_table(stability, "tableS1_module_stability",
-             "Supplementary Table S1. Coexpression module stability under subsampling.")
+format_table(stability_out, "tableS1_module_stability",
+             "Supplementary Table S1. Stability of all candidate coexpression modules under subsampling, both compartments.")
+format_table(pc1_all, "tableS4_pc1_composition",
+             "Supplementary Table S4. Association between the first principal component of each direction and cell-type marker scores.")
+format_table(read_if_exists(file.path(AGE_DIR, "age_sensitivity_concordance.csv")),
+             "tableS3_age_sensitivity",
+             "Supplementary Table S3. Concordance between the primary differential expression model, which includes age, and a sensitivity model without it.")
 
 tissues <- c("heart", "kidney", "liver", "lung", "smallintestine",
              "testis", "thyroid")
@@ -326,6 +475,40 @@ if (!is.null(peak_counts)) {
   format_table(peak_counts[, c("tissue", "mark", "n_peaks")],
                "tableS2_peak_counts_by_tissue",
                "Supplementary Table S2. Replicated peak counts per tissue and mark.")
+}
+
+age_genes <- do.call(rbind, lapply(c("cortex", "medulla"), function(cp) {
+  d <- read_if_exists(file.path(AGE_DIR,
+                                sprintf("age_sensitivity_genes_%s.csv", cp)))
+  if (is.null(d)) return(NULL)
+  d$compartment <- cp
+  d
+}))
+
+if (!is.null(age_genes)) {
+  age_genes$compartment <- factor(age_genes$compartment,
+                                  levels = c("cortex", "medulla"),
+                                  labels = c("Cortex", "Medulla"))
+  labs_df <- do.call(rbind, lapply(split(age_genes, age_genes$compartment),
+                                   function(d) data.frame(
+    compartment = d$compartment[1],
+    label = sprintf("rho == %.3f", cor(d$log_fc_with_age,
+                                       d$log_fc_without_age,
+                                       method = "spearman")),
+    stringsAsFactors = FALSE)))
+
+  figS2 <- ggplot(age_genes, aes(log_fc_without_age, log_fc_with_age)) +
+    geom_abline(slope = 1, intercept = 0, linetype = "dashed",
+                linewidth = 0.3, colour = "grey50") +
+    geom_point(size = 0.3, alpha = 0.3, colour = "#2c6fbb") +
+    geom_text(data = labs_df, aes(x = -Inf, y = Inf, label = label),
+              parse = TRUE, hjust = -0.15, vjust = 1.6, size = 2.8,
+              inherit.aes = FALSE) +
+    facet_wrap(~ compartment) +
+    labs(x = "log2 fold change, sensitivity model without age",
+         y = "log2 fold change, primary model with age")
+
+  save_figure(figS2, "figureS2_age_sensitivity", 80)
 }
 
 message("figures in ", FIG_DIR)

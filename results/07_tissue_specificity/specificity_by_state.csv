@@ -1,4 +1,4 @@
 "state","mean_tissues","frac_kidney_specific","n_enhancers","n_genes"
-"unchanged",3.8,0,2,3553
-"repressed",2.818,0,2,911
-"induced",4.333,0,2,1102
+"unchanged",3.8,0,2,3542
+"repressed",3,0,2,912
+"induced",4.333,0,2,1112

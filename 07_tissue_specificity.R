@@ -12,6 +12,7 @@ FDR_CUTOFF <- 0.10
 PROMOTER_UPSTREAM <- 2000
 PROMOTER_DOWNSTREAM <- 500
 REFERENCE_TISSUE <- "kidney"
+PEAK_WIDTH_QUANTILE <- 0.995
 TISSUES <- c("heart", "kidney", "liver", "lung", "smallintestine",
              "testis", "thyroid")
 
@@ -34,8 +35,15 @@ load_peaks <- function(tissue, mark) {
                     stringsAsFactors = FALSE)
   accession <- unname(seq_map[sub("^chr", "", tab$V1)])
   ok <- !is.na(accession) & accession %in% valid_seqlevels
-  sort(GRanges(seqnames = accession[ok],
-               ranges = IRanges(start = tab$V2[ok] + 1L, end = tab$V3[ok])))
+  gr <- GRanges(seqnames = accession[ok],
+                ranges = IRanges(start = tab$V2[ok] + 1L, end = tab$V3[ok]),
+                fold_change = tab$V7[ok])
+  cutoff <- quantile(width(gr), PEAK_WIDTH_QUANTILE)
+  n_mapped <- length(gr)
+  gr <- gr[width(gr) <= cutoff]
+  message(sprintf("%s/%s: %d mapped, %d retained after width filter",
+                  tissue, mark, n_mapped, length(gr)))
+  sort(gr)
 }
 
 score_specificity <- function(mark) {
@@ -86,16 +94,23 @@ gene_enhancers <- data.frame(
   gene_symbol = annotation$gene_symbol[queryHits(gene_pairs)],
   n_tissues = mcols(distal)$n_tissues[subjectHits(gene_pairs)],
   kidney_specific = mcols(distal)$n_tissues[subjectHits(gene_pairs)] == 1L,
+  fold_change = mcols(distal)$fold_change[subjectHits(gene_pairs)],
   stringsAsFactors = FALSE
 )
 
-gene_level <- aggregate(cbind(n_tissues, kidney_specific) ~ gene_symbol,
-                        data = gene_enhancers,
+signal_vs_breadth <- cor.test(gene_enhancers$fold_change,
+                              gene_enhancers$n_tissues, method = "spearman")
+cat(sprintf("\nenhancer signal vs tissue breadth: rho = %.3f, p = %.3g\n",
+            unname(signal_vs_breadth$estimate), signal_vs_breadth$p.value))
+
+gene_level <- aggregate(cbind(n_tissues, kidney_specific, fold_change) ~
+                          gene_symbol, data = gene_enhancers,
                         FUN = function(v) c(mean = mean(v), n = length(v)))
 gene_level <- data.frame(
   gene_symbol = gene_level$gene_symbol,
   mean_tissues = round(gene_level$n_tissues[, "mean"], 3),
   frac_kidney_specific = round(gene_level$kidney_specific[, "mean"], 3),
+  mean_fold_change = round(gene_level$fold_change[, "mean"], 3),
   n_enhancers = as.integer(gene_level$n_tissues[, "n"]),
   stringsAsFactors = FALSE
 )
@@ -151,12 +166,27 @@ pairwise <- do.call(rbind, lapply(c("repressed", "induced"), function(s) {
 write.csv(pairwise, file.path(OUT_DIR, "pairwise_tests.csv"), row.names = FALSE)
 print(pairwise)
 
+signal_by_state <- aggregate(mean_fold_change ~ state, data = dat, FUN = median)
+write.csv(signal_by_state, file.path(OUT_DIR, "enhancer_signal_by_state.csv"),
+          row.names = FALSE)
+cat("\nmedian enhancer signal by expression state\n")
+print(signal_by_state)
+
 model_repressed <- glm(I(state == "repressed") ~ frac_kidney_specific +
-                         log(n_enhancers + 1),
+                         log(n_enhancers + 1) + mean_fold_change,
                        data = dat[dat$state != "induced", ], family = binomial())
 model_induced <- glm(I(state == "induced") ~ frac_kidney_specific +
-                       log(n_enhancers + 1),
+                       log(n_enhancers + 1) + mean_fold_change,
                      data = dat[dat$state != "repressed", ], family = binomial())
+
+model_repressed_nosignal <- glm(I(state == "repressed") ~ frac_kidney_specific +
+                                  log(n_enhancers + 1),
+                                data = dat[dat$state != "induced", ],
+                                family = binomial())
+model_induced_nosignal <- glm(I(state == "induced") ~ frac_kidney_specific +
+                                log(n_enhancers + 1),
+                              data = dat[dat$state != "repressed", ],
+                              family = binomial())
 
 extract_coef <- function(model, label) {
   out <- as.data.frame(coef(summary(model)))
@@ -168,8 +198,15 @@ extract_coef <- function(model, label) {
           "Pr(>|z|)")]
 }
 
-models <- rbind(extract_coef(model_repressed, "repressed"),
-                extract_coef(model_induced, "induced"))
+models <- rbind(extract_coef(model_repressed_nosignal, "repressed"),
+                extract_coef(model_induced_nosignal, "induced"))
+models_adjusted <- rbind(
+  extract_coef(model_repressed, "repressed_signal_adjusted"),
+  extract_coef(model_induced, "induced_signal_adjusted"))
+write.csv(models_adjusted, file.path(OUT_DIR, "logistic_models_signal_adjusted.csv"),
+          row.names = FALSE)
+cat("\nmodels additionally adjusted for enhancer signal strength\n")
+print(models_adjusted)
 write.csv(models, file.path(OUT_DIR, "logistic_models.csv"), row.names = FALSE)
 cat("\nassociation between enhancer tissue specificity and expression state\n")
 print(models)

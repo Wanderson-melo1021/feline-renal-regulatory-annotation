@@ -1,0 +1,11 @@
+Supplementary Table S5. Number of motif tests reaching a corrected P below 0.05, by compartment and region type.
+
+compartment	region type	significant	n
+Cortex	Promoters	FALSE	1200
+Medulla	Promoters	FALSE	1196
+Cortex	Enhancers	FALSE	1203
+Medulla	Enhancers	FALSE	1203
+Cortex	Promoters	TRUE	   3
+Medulla	Promoters	TRUE	   7
+Cortex	Enhancers	TRUE	   0
+Medulla	Enhancers	TRUE	   0

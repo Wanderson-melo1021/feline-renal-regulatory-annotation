@@ -1,0 +1,15 @@
+Supplementary Table S4. Association between the first principal component of each direction and cell-type marker scores.
+
+direction	n genes	var explained	marker set	rho	p value	fdr	compartment
+Induced	2592	0.608	Epithelial	-0.932	4.92e-06	5.09e-06	Cortex
+Induced	2592	0.608	Immune	 0.896	2.76e-06	5.09e-06	Cortex
+Induced	2592	0.608	Fibroblast	 0.936	5.02e-06	5.09e-06	Cortex
+Repressed	2178	0.575	Epithelial	 0.940	5.09e-06	5.09e-06	Cortex
+Repressed	2178	0.575	Immune	-0.842	0.00e+00	0.00e+00	Cortex
+Repressed	2178	0.575	Fibroblast	-0.923	4.59e-06	5.09e-06	Cortex
+Induced	1654	0.557	Epithelial	-0.422	8.20e-02	1.24e-01	Medulla
+Induced	1654	0.557	Immune	 0.841	0.00e+00	0.00e+00	Medulla
+Induced	1654	0.557	Fibroblast	 0.610	8.00e-03	1.70e-02	Medulla
+Repressed	1717	0.646	Epithelial	 0.187	4.56e-01	4.56e-01	Medulla
+Repressed	1717	0.646	Immune	-0.616	8.00e-03	1.70e-02	Medulla
+Repressed	1717	0.646	Fibroblast	-0.333	1.76e-01	2.11e-01	Medulla

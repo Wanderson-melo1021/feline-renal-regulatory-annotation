@@ -1,15 +1,17 @@
 library(dynamicTreeCut)
 
-COMPARTMENT <- "medulla"
-CONTRAST <- "early_vs_control"
+ARGS <- commandArgs(trailingOnly = TRUE)
+
+COMPARTMENT <- if (length(ARGS) >= 1) ARGS[1] else "cortex"
+CONTRAST <- if (length(ARGS) >= 2) ARGS[2] else "late_vs_control"
 
 EXPR_OBJ <- "data/processed/expression_objects.rds"
 REG_OBJ <- "data/processed/regulatory_objects.rds"
 DE_DIR <- "results/01_differential_expression"
 OUT_ROOT <- "results/03_modules"
 
-FDR_CUTOFF <- 0.10
-LFC_CUTOFF <- 0
+FDR_CUTOFF <- if (length(ARGS) >= 3) as.numeric(ARGS[3]) else 0.10
+LFC_CUTOFF <- if (length(ARGS) >= 4) as.numeric(ARGS[4]) else 0
 MIN_MODULE_SIZE <- 30
 DEEP_SPLIT <- 2
 N_BOOTSTRAP <- 200
@@ -40,6 +42,9 @@ MARKER_SETS <- list(
 
 OUT_DIR <- file.path(OUT_ROOT, sprintf("%s_%s", COMPARTMENT, CONTRAST))
 dir.create(OUT_DIR, recursive = TRUE, showWarnings = FALSE)
+
+message(sprintf("compartment %s, contrast %s, FDR < %g, |log2FC| > %g",
+                COMPARTMENT, CONTRAST, FDR_CUTOFF, LFC_CUTOFF))
 
 build_distance <- function(expr) {
   as.dist(1 - cor(t(expr), method = "spearman"))
@@ -202,6 +207,51 @@ for (direction in c("up", "down")) {
   results[[direction]] <- list(assignment = assignment, stability = stability,
                                eigengenes = eig_matrix,
                                var_explained = var_explained)
+}
+
+direction_pc1 <- do.call(rbind, lapply(c("up", "down"), function(direction) {
+  genes <- selected$gene_symbol[
+    if (direction == "up") selected$log_fc > 0 else selected$log_fc < 0]
+  genes <- intersect(genes, rownames(expr))
+  if (length(genes) < MIN_MODULE_SIZE) return(NULL)
+
+  pc <- module_eigengene(expr, genes)
+  composition[[paste0(direction, "_PC1")]] <<- pc$eigengene
+
+  do.call(rbind, lapply(names(markers), function(cell) {
+    if (all(is.na(composition[[cell]]))) return(NULL)
+    ct <- suppressWarnings(cor.test(pc$eigengene, composition[[cell]],
+                                    method = "spearman"))
+    data.frame(direction = direction, n_genes = length(genes),
+               var_explained = pc$var_explained,
+               marker_set = cell,
+               rho = round(unname(ct$estimate), 3),
+               p_value = signif(ct$p.value, 3),
+               stringsAsFactors = FALSE)
+  }))
+}))
+
+if (!is.null(direction_pc1)) {
+  direction_pc1$fdr <- signif(p.adjust(direction_pc1$p_value, "BH"), 3)
+  write.csv(direction_pc1, file.path(OUT_DIR, "direction_pc1_composition.csv"),
+            row.names = FALSE)
+  cat("\nfirst principal component of each direction against composition\n")
+  print(direction_pc1)
+
+  group_pc1 <- do.call(rbind, lapply(c("up", "down"), function(direction) {
+    key <- paste0(direction, "_PC1")
+    if (is.null(composition[[key]])) return(NULL)
+    data.frame(direction = direction,
+               kruskal_p = signif(kruskal.test(composition[[key]] ~
+                                                 samples$group)$p.value, 3),
+               stringsAsFactors = FALSE)
+  }))
+  write.csv(group_pc1, file.path(OUT_DIR, "direction_pc1_group.csv"),
+            row.names = FALSE)
+  print(group_pc1)
+
+  write.csv(composition, file.path(OUT_DIR, "composition_and_eigengenes.csv"),
+            row.names = FALSE)
 }
 
 if (!length(results)) stop("no direction yielded modules")

@@ -4,7 +4,7 @@
 
 Analysis code for the manuscript *A cis-regulatory annotation of the feline renal cortex and the tissue-specificity shift in chronic kidney disease*.
 
-The study annotates promoter and enhancer architecture for genes expressed in the renal cortex of the domestic cat, combining replicated ChIP-seq peak sets with the RefSeq annotation, and asks whether the transcriptomic signature of chronic kidney disease has recoverable coregulatory structure. It does not: the only reproducible axis tracks tubular content. Genes that lose expression are instead enriched for enhancers active in the kidney and nowhere else, and genes that gain expression for enhancers shared across organs.
+The study annotates promoter and enhancer architecture for genes expressed in the renal cortex of the domestic cat, combining replicated ChIP-seq peak sets with the RefSeq annotation, and asks whether the transcriptomic signature of chronic kidney disease has recoverable coregulatory structure. It does not: none of 69 candidate coexpression modules survives resampling of animals, and the dominant axis of each direction tracks cell-type composition instead. Genes that lose expression are enriched for enhancers active in the kidney and nowhere else, and genes that gain expression for enhancers shared across organs.
 
 This repository contains code and derived result tables. Primary data are publicly deposited and are not versioned here.
 
@@ -41,7 +41,7 @@ Run in order. Each module writes to its own directory under `results/` and reads
 00b_download_all_tissues.sh       peak sets for the remaining six tissues
 01_differential_expression.R      limma-trend on the deposited log2 CPM matrices
 02_regulatory_annotation.R        coordinate harmonisation, promoter and domain assignment
-03_module_pipeline.R              coexpression modules with stability assessment
+03_module_pipeline.R              coexpression modules, stability, principal components
 04_motif_enrichment.R             binned motif enrichment against a matched background
 05_err_target_characterization.R  functional characterisation of ERR-motif genes
 06_architecture_controls.R        controls separating architecture from regulation
@@ -50,7 +50,16 @@ Run in order. Each module writes to its own directory under `results/` and reads
 09_cohort_and_age.R               cohort table and age sensitivity
 ```
 
-Module 03 is parameterised by compartment and contrast in its first two lines.
+Module 03 takes its parameters on the command line and is run once per compartment:
+
+```
+Rscript 03_module_pipeline.R cortex late_vs_control 0.10 0
+Rscript 03_module_pipeline.R medulla early_vs_control 0.10 0
+```
+
+The four arguments are compartment, contrast, false discovery threshold and absolute log2 fold-change threshold. The same thresholds are used in both compartments.
+
+Module 01 includes age in the differential expression model by default; set `ADJUST_FOR_AGE` to `FALSE` to reproduce the specification used by the source study, and `MIN_AGE` to a positive value to exclude younger animals as a sensitivity analysis.
 
 ## Environment
 
